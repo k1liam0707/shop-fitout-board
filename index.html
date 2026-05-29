@@ -966,6 +966,33 @@
         }
 
         function renderAll() {
+                    // 自动从GitHub加载Excel（本地无缓存时）
+        if (!loadFromStorage()) {
+            var xhr = new XMLHttpRequest();
+            xhr.open('GET', '胶州天街B1装修管控进度表.xlsx', true);
+            xhr.responseType = 'arraybuffer';
+            xhr.onload = function() {
+                if (xhr.status === 200) {
+                    var data = new Uint8Array(xhr.response);
+                    originalFileBytes = data;
+                    originalWorkbook = XLSX.read(data, { type: 'array', cellDates: true });
+                    originalSheetName = originalWorkbook.SheetNames[0];
+                    var sheet = originalWorkbook.Sheets[originalSheetName];
+                    var raw = XLSX.utils.sheet_to_json(sheet, { header: 1, blankrows: false });
+                    parseData(raw);
+                    if (allShops.length === 0) {
+                        var raw2 = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
+                        parseData(raw2);
+                    }
+                    saveToStorage();
+                    renderAll();
+                    document.getElementById('btnUpload').classList.add('loaded');
+                    document.getElementById('btnUploadText').textContent = '已加载云端数据';
+                    document.getElementById('emptyState').style.display = 'none';
+                }
+            };
+            xhr.send();
+        }
             updateCountdown();
             renderKPIs();
             renderRiskPanel();
